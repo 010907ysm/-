@@ -289,14 +289,14 @@ h2{font-size:clamp(31px,3.1vw,48px);line-height:1.35;font-weight:700;letter-spac
       </div>
       <div class="film-grid">
         <article class="film-card">
-          <button class="film-poster film-poster-one" data-video-id="nhOAa81hHN4" data-video-title="포트폴리오 필름 01" aria-label="포트폴리오 필름 01 재생">
+          <button class="film-poster film-poster-one" data-video-id="nhOAa81hHN4" data-video-title="여의도 야간촬영" aria-label="여의도 야간촬영 재생">
             <span class="poster-placeholder" aria-hidden="true">FLY<br>FILM<span>PORTFOLIO / 01</span></span>
             <img class="youtube-thumbnail" src="https://i.ytimg.com/vi/nhOAa81hHN4/hqdefault.jpg" alt="" loading="lazy" width="480" height="360" onerror="this.hidden=true">
             <span class="film-poster-shade"></span><span class="poster-label">FLY FILM PORTFOLIO</span>
             <span class="play-circle"><span class="play-triangle" aria-hidden="true"></span><span class="sr-only">재생</span></span>
             <span class="poster-bottom">WATCH FILM <span aria-hidden="true">↗</span></span>
           </button>
-          <div class="film-info"><div><p class="eyebrow">PORTFOLIO FILM / 01</p><h3>여의도 야간촬영</h3></div><button class="text-icon-button" data-video-id="nhOAa81hHN4" data-video-title="포트폴리오 필름 01" aria-label="포트폴리오 필름 01 재생">↗</button></div>
+          <div class="film-info"><div><p class="eyebrow">PORTFOLIO FILM / 01</p><h3>여의도 야간촬영</h3></div><button class="text-icon-button" data-video-id="nhOAa81hHN4" data-video-title="여의도 야간촬영" aria-label="여의도 야간촬영 재생">↗</button></div>
         </article>
         <article class="film-card">
           <button class="film-poster film-poster-two" data-video-id="zsngtFXc1ck" data-video-title="2023 Showreel" aria-label="2023 Showreel 재생">
@@ -658,13 +658,33 @@ h2{font-size:clamp(31px,3.1vw,48px);line-height:1.35;font-weight:700;letter-spac
               : '영상 재생에는 인터넷 연결이 필요합니다. 재생이 제한되면 “YouTube에서 보기”를 선택해 주세요.';
           }
 
-          const url = new URL('https://www.youtube-nocookie.com/embed/' + id);
+          // YouTube error 153 방지: 로컬(file://)에서는 HTTP Referer가 없어
+          // 임베드 재생이 차단될 수 있으므로 안전한 안내 화면을 표시합니다.
+          if (window.location.protocol === 'file:') {
+            const localNotice = document.createElement('div');
+            localNotice.style.cssText = 'height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:30px;text-align:center;background:#050809;color:#fff';
+            const message = document.createElement('p');
+            message.style.cssText = 'margin:0;max-width:680px;line-height:1.8;color:#c8d2dc;font-size:14px';
+            message.textContent = '이 HTML 파일을 PC에서 직접 열면 YouTube가 사이트 출처(HTTP Referer)를 확인할 수 없어 오류 153이 발생할 수 있습니다. 배포된 HTTPS 사이트에서 열거나 아래 버튼으로 YouTube에서 재생해 주세요.';
+            const openLink = document.createElement('a');
+            openLink.href = 'https://www.youtube.com/watch?v=' + id;
+            openLink.target = '_blank';
+            openLink.rel = 'noopener';
+            openLink.textContent = 'YouTube에서 영상 보기 ↗';
+            openLink.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 20px;background:#f0f0e9;color:#10161d;font-weight:700;text-decoration:none';
+            localNotice.append(message, openLink);
+            videoMount.replaceChildren(localNotice);
+            videoController.open(button);
+            return;
+          }
+
+          const url = new URL('https://www.youtube.com/embed/' + id);
           url.searchParams.set('autoplay', '1');
           url.searchParams.set('playsinline', '1');
           url.searchParams.set('rel', '0');
-          if (/^https?:$/.test(window.location.protocol)) {
-            url.searchParams.set('origin', window.location.origin);
-          }
+          url.searchParams.set('origin', window.location.origin);
+          url.searchParams.set('widget_referrer', window.location.href);
+
           const iframe = document.createElement('iframe');
           iframe.className = 'video-frame';
           iframe.title = title;
